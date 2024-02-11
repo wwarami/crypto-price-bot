@@ -1,5 +1,7 @@
 {
     "cSpell.words": [
+        "aiogram",
+        "selectinload",
         "sessionmaker",
         "sqlalchemy"
     ]
