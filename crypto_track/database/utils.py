@@ -1,3 +1,6 @@
+"""
+This functions are used to interact with the database.
+"""
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from crypto_track.database.models import User, Crypto, Price
@@ -6,9 +9,9 @@ from crypto_track.enums import TimeOptions
 from sqlalchemy.orm import selectinload, aliased
 from sqlalchemy import select, func
 
+
 async def check_user_exists(async_session: AsyncSession, user_id: str) -> User | None:
     async with async_session() as session:
-        # Check if a user exists with the provided id. 
         query = select(User).filter(User.id == user_id)
         result = await session.execute(query)
         user = result.scalars().first()
@@ -26,9 +29,11 @@ async def create_new_user(async_session: AsyncSession,
 
         return new_user
 
+
 async def add_cryptos_to_user_tracked(async_session: AsyncSession,
                                       user_id: str,
                                       cryptos_to_add_ids: List[str]) -> User:
+    # Gets a user id and list of crypto ids for the user to track.
     async with async_session() as session:
         result = await session.execute(
             select(User).options(selectinload(User.tracking_cryptos)).filter_by(id=user_id)
@@ -36,13 +41,13 @@ async def add_cryptos_to_user_tracked(async_session: AsyncSession,
         user = result.scalars().first()
 
         if not user:
-            raise ValueError("User not found")
+            raise ValueError("User not found.")
 
         cryptos = await session.execute(select(Crypto).filter(Crypto.id.in_(cryptos_to_add_ids)))
         cryptos_list = cryptos.scalars().all()
 
         if not cryptos_list:
-            raise ValueError("No cryptos found with provided IDs")
+            raise ValueError("No cryptos found with provided IDs.")
 
         for crypto in cryptos_list:
             if crypto not in user.tracking_cryptos:
@@ -51,6 +56,7 @@ async def add_cryptos_to_user_tracked(async_session: AsyncSession,
         await session.commit()
 
         return user
+
 
 async def get_user_cryptos(async_session: AsyncSession, 
                            user_id: int) -> List[Crypto]:
@@ -63,7 +69,8 @@ async def get_user_cryptos(async_session: AsyncSession,
             return user.tracking_cryptos
         else:
             return None
-    
+
+
 async def create_new_crypto(async_session: AsyncSession,
                             crypto_name: str, 
                             symbol: str,
@@ -92,13 +99,14 @@ async def get_all_cryptos(async_session: AsyncSession) -> List[Crypto]:
         return cryptos
     
 
-async def get_crypto_prices(async_session: AsyncSession,
+async def get_crypto_all_prices(async_session: AsyncSession,
                             crypto_id: str) -> List[Price]:
     async with async_session() as session:
         query = select(Price).filter(Price.crypto_id == crypto_id)
         result = await session.execute(query)
         prices = result.scalars().all()
         return prices
+
 
 async def get_crypto_current_price(async_session: AsyncSession,
                                    crypto_id: str) -> Price:
@@ -141,6 +149,7 @@ async def get_multiple_cryptos_current_price(async_session: AsyncSession, crypto
         current_prices = result.scalars().all()
 
         return current_prices
+
 
 async def add_new_price(async_session: AsyncSession, 
                         crypto_id: str,
