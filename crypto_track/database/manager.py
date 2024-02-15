@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from crypto_track.database.models import User, Crypto, Price
 from sqlalchemy.future import select
@@ -32,6 +32,27 @@ class AsyncDatabaseManager:
             await session.commit()
 
             return new_user
+
+    async def create_new_user_and_add_cryptos(self, 
+                                            user_id: str, 
+                                            user_name: str, 
+                                            how_often: TimeOptions, 
+                                            cryptos_to_add_ids: List[str]) -> User:
+        async with self.async_session() as session:
+            new_user = User(id=user_id, name=user_name, how_often=how_often)
+            
+            cryptos = await session.execute(select(Crypto).filter(Crypto.id.in_(cryptos_to_add_ids)))
+            cryptos_list = cryptos.scalars().all()
+
+            if not cryptos_list and cryptos_to_add_ids:
+                raise ValueError("No cryptos found with provided IDs.")
+            
+            new_user.tracking_cryptos.extend(cryptos_list)
+            
+            session.add(new_user)
+            await session.commit()
+
+            return new_user
     
     async def check_user_exists(self, 
                                 user_id: str) -> User | None:
@@ -41,7 +62,6 @@ class AsyncDatabaseManager:
             user = result.scalars().first()
 
             return user if user else None
-        
     
     async def add_cryptos_to_user_tracked(self,
                                       user_id: str,
@@ -71,7 +91,7 @@ class AsyncDatabaseManager:
             return user
     
     async def get_user_cryptos(self, 
-                           user_id: int) -> List[Crypto]:
+                           user_id: str) -> List[Crypto]:
         async with self.async_session() as session:
             query = select(User).options(selectinload(User.tracking_cryptos)).filter(User.id == user_id)
             result = await session.execute(query)
@@ -82,6 +102,43 @@ class AsyncDatabaseManager:
             else:
                 return None
     
+    async def get_user_with_cryptos(self, user_id: str) -> User | None:
+        async with self.async_session() as session:
+            # Perform a query to fetch the user and eagerly load the tracking_cryptos relationship
+            result = await session.execute(
+                select(User).options(selectinload(User.tracking_cryptos)).filter_by(id=user_id)
+            )
+            user = result.scalars().first()
+
+            return user
+    
+    async def delete_user(self, user_id: str) -> bool:
+        async with self.async_session() as session:
+            query = select(User).filter_by(id=user_id)
+            result = await session.execute(query)
+            user = result.scalars().first()
+            
+            if user:
+                await session.delete(user)
+                await session.commit()
+                return True
+            
+            return False
+
+    async def get_multiple_users_with_cryptos(self, user_ids: Optional[List[str]] = None) -> List[User]:
+        async with self.async_session() as session:
+            # Start constructing the query
+            query = select(User).options(selectinload(User.tracking_cryptos))
+            
+            # If user_ids is provided and not empty, filter by the given IDs
+            if user_ids:
+                query = query.filter(User.id.in_(user_ids))
+            
+            result = await session.execute(query)
+            users = result.scalars().all()
+            
+            return users
+        
     async def create_new_crypto(self,
                             crypto_name: str, 
                             symbol: str,
