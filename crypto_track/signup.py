@@ -15,6 +15,7 @@ from aiogram.types import (
     CallbackQuery,
 )
 from crypto_track.database.models import Crypto
+from crypto_track.uils import generate_main_keyboard
 
 
 def load_signup_messages():
@@ -55,7 +56,7 @@ async def start(message: Message, state: FSMContext) -> None:
     if user_exists:
         await message.answer(
             new_user_comeback_text.format(user_name=user_exists.name),
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=generate_main_keyboard()
         )
     else:
         await state.set_state(SignUpForm.name)
@@ -107,7 +108,10 @@ async def handle_how_often(message: Message, state: FSMContext):
 
 @signup_router.callback_query(F.data.startswith('select_crypto:'))
 async def handle_crypto_selection(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.answer()
+    try:
+        await callback_query.answer('درحال پردازش')
+    except:
+        pass
     crypto_id = callback_query.data.split(':')[1]
     data = await state.get_data()
     selected_cryptos = data.get('tracked_cryptos', [])
@@ -135,20 +139,25 @@ async def handle_done_selecting_cryptos(callback_query: CallbackQuery, state: FS
     await state.clear()
 
     if not data.get('name', None) or not data.get('how_often', None):
-        await callback_query.answer(
-            "مشکلی رخ داد!💔",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        try:
+            await callback_query.answer(
+                "مشکلی رخ داد!💔",
+                reply_markup=ReplyKeyboardRemove())
+        except:
+            pass
         await callback_query.message.answer(fail_signup_text)
     else:
-        await callback_query.answer()
+        try:
+            await callback_query.answer('درحال پردازش اطلاعات...')
+        except:
+            pass
         new_user = await AsyncDatabaseManager().create_new_user_and_add_cryptos(user_id=callback_query.from_user.id,
                                                                                 user_name=data['name'],
                                                                                 how_often=data['how_often'],
                                                                                 cryptos_to_add_ids=data['tracked_cryptos'])
         await callback_query.message.answer(
             generate_newuser_welcome(name=new_user.name, how_often=new_user.how_often, tracking_cryptos=data['tracked_cryptos']),
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=generate_main_keyboard()
             )
 
 

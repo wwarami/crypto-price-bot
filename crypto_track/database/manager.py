@@ -54,6 +54,22 @@ class AsyncDatabaseManager:
 
             return new_user
     
+    async def update_user(self, 
+                          user_id: str,
+                          new_user_name: str = None,
+                          new_how_often: TimeOptions = None) -> User:
+        async with self.async_session() as session:
+            query = select(User).filter(User.id == user_id)
+            result = await session.execute(query)
+            user = result.scalars().first()
+            if new_user_name:
+                user.name = new_user_name
+            if new_how_often:
+                user.how_often = new_how_often
+
+            await session.commit()
+            return user
+
     async def check_user_exists(self, 
                                 user_id: str) -> User | None:
         async with self.async_session() as session:
@@ -82,10 +98,7 @@ class AsyncDatabaseManager:
             if not cryptos_list:
                 raise ValueError("No cryptos found with provided IDs.")
 
-            for crypto in cryptos_list:
-                if crypto not in user.tracking_cryptos:
-                    user.tracking_cryptos.append(crypto)
-
+            user.tracking_cryptos = cryptos_list
             await session.commit()
 
             return user
