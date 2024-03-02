@@ -16,13 +16,13 @@ from aiogram.types import (Message,
 
 
 def load_profile_messages():
-    with open('messages\\profile\\you_have_not_account.txt', 'r', encoding='utf-8') as file:
+    with open('messages/profile/you_have_not_account.txt', 'r', encoding='utf-8') as file:
         you_have_not_account_text = file.read()
 
-    with open('messages\\profile\\your_profile.txt', 'r', encoding='utf-8') as file:
+    with open('messages/profile/your_profile.txt', 'r', encoding='utf-8') as file:
         your_profile_text = file.read()
 
-    with open('messages\\profile\\edit_how_often.txt', 'r', encoding='utf-8') as file:
+    with open('messages/profile/edit_how_often.txt', 'r', encoding='utf-8') as file:
         edit_how_often_text = file.read()
 
     return you_have_not_account_text, your_profile_text, edit_how_often_text
@@ -175,7 +175,7 @@ async def handle_done_selecting_cryptos(callback_query: CallbackQuery, state: FS
 def generate_crypto_selection_keyboard_update(available_cryptos: List[Crypto], chosen_cryptos_ids: List[str]):
     buttons = []
     for crypto in available_cryptos:
-        text = f"{'✔️ ' if str(crypto.id) in chosen_cryptos_ids else ''}{crypto.symbol}"
+        text = f"{'✔️ ' if str(crypto.id) in chosen_cryptos_ids else ''}{crypto.name}"
         callback_data = f"select_crypto_update:{crypto.id}"
         buttons.append([InlineKeyboardButton(text=text, callback_data=callback_data)])
 

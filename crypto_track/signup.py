@@ -19,22 +19,22 @@ from crypto_track.uils import generate_main_keyboard
 
 
 def load_signup_messages():
-    with open('messages\\signup\\new_user_signup.txt', 'r', encoding='utf-8') as file:
+    with open('messages/signup/new_user_signup.txt', 'r', encoding='utf-8') as file:
         new_user_signup_text = file.read()
 
-    with open('messages\\signup\\new_user_comeback.txt', 'r', encoding='utf-8') as file:
+    with open('messages/signup/new_user_comeback.txt', 'r', encoding='utf-8') as file:
         new_user_comeback_text = file.read()
 
-    with open('messages\\signup\\handle_name_signup.txt', 'r', encoding='utf-8') as file:
+    with open('messages/signup/handle_name_signup.txt', 'r', encoding='utf-8') as file:
         handle_name_signup_text = file.read()
 
-    with open('messages\\signup\\handle_howoften_signup.txt', 'r', encoding='utf-8') as file:
+    with open('messages/signup/handle_howoften_signup.txt', 'r', encoding='utf-8') as file:
         handle_howoften_signup_text = file.read()
 
-    with open('messages\\signup\\new_user_welcome.txt', 'r', encoding='utf-8') as file:
+    with open('messages/signup/new_user_welcome.txt', 'r', encoding='utf-8') as file:
         new_user_welcome_text = file.read()
     
-    with open('messages\\signup\\fail_signup.txt', 'r', encoding='utf-8') as file:
+    with open('messages/signup/fail_signup.txt', 'r', encoding='utf-8') as file:
         fail_signup_text = file.read()
 
     return new_user_signup_text, new_user_comeback_text, handle_name_signup_text, handle_howoften_signup_text, new_user_welcome_text, fail_signup_text
@@ -94,7 +94,7 @@ async def handle_how_often(message: Message, state: FSMContext):
     for time_option in TimeOptions:
         if how_often == f'⏳ هر {time_option.value} دقیقه یکبار':
             data = await state.update_data(how_often=time_option)
-            state.set_state(SignUpForm.tracked_cryptos)
+            await state.set_state(SignUpForm.tracked_cryptos)
             # 👇
             available_cryptos = await AsyncDatabaseManager().get_all_cryptos()
 
@@ -164,7 +164,7 @@ async def handle_done_selecting_cryptos(callback_query: CallbackQuery, state: FS
 def generate_crypto_selection_keyboard(available_cryptos: List[Crypto], chosen_cryptos_ids: List[str]):
     buttons = []
     for crypto in available_cryptos:
-        text = f"{'✔️ ' if str(crypto.id) in chosen_cryptos_ids else ''}{crypto.symbol}"
+        text = f"{'✔️ ' if str(crypto.id) in chosen_cryptos_ids else ''}{crypto.name}"
         callback_data = f"select_crypto:{crypto.id}"
         buttons.append([InlineKeyboardButton(text=text, callback_data=callback_data)])
 
