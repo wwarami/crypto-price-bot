@@ -219,7 +219,7 @@ class AsyncDatabaseManager:
                     latest_price_subquery,
                     (Price.crypto_id == latest_price_subquery.c.crypto_id) &
                     (Price.date == latest_price_subquery.c.max_date)
-                )
+                ).options(selectinload(Price.crypto))
             )
 
             result = await session.execute(query)
@@ -236,3 +236,19 @@ class AsyncDatabaseManager:
             session.add(new_price)
             await session.commit()
             return new_price
+
+    async def update_cryptos_prices_by_symbol(self,
+                                           data: dict[str, float]) -> None:
+        async with self.async_session() as session:
+            query = select(Crypto)
+            result = await session.execute(query)
+            cryptos = result.scalars().all()
+
+            for crypto in cryptos:
+                new_price = data.get(crypto.symbol)
+                if not new_price:
+                    continue
+                new_price = Price(crypto_id=crypto.id, price=new_price)
+                session.add(new_price)
+            
+            await session.commit()
