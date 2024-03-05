@@ -24,6 +24,7 @@ class User(Base):
         secondary=user_crypto_association,
         back_populates="tracked_by_users")
     how_often = Column(Enum(TimeOptions))
+    last_update = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self) -> str:
         return f'User(id={self.id}, name={self.name}, joined_date={self.joined_date}, how_often={self.how_often.value})'
