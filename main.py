@@ -13,7 +13,8 @@ from aiogram import Dispatcher
 from crypto_track.signup import signup_router
 from crypto_track.profile import profile_router
 from crypto_track.crypto_price import crypto_price_router
-
+from crypto_track.update_price import update_prices_manager
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 dp = Dispatcher()
 # Load .env variables
@@ -31,9 +32,16 @@ async def main():
     database_manager_instance = AsyncDatabaseManager(async_session=async_session)
     api_manager_instance = AsyncAPIManager(api_key=API_KEY)
 
+
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(update_prices_manager,
+                    'interval', seconds=10 * 60)
+
     dp.include_router(signup_router)
     dp.include_router(profile_router)
     dp.include_router(crypto_price_router)
+
+    scheduler.start()
     await dp.start_polling(bot)
 
 

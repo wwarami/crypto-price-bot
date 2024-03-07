@@ -238,7 +238,7 @@ class AsyncDatabaseManager:
             return new_price
 
     async def update_cryptos_prices_by_symbol(self,
-                                           data: dict[str, float]) -> None:
+                                           data: dict[str, float]) -> list[Crypto]:
         async with self.async_session() as session:
             query = select(Crypto)
             result = await session.execute(query)
@@ -249,6 +249,8 @@ class AsyncDatabaseManager:
                 if not new_price:
                     continue
                 new_price = Price(crypto_id=crypto.id, price=new_price)
+                crypto.current_price = new_price
                 session.add(new_price)
             
             await session.commit()
+            return cryptos
