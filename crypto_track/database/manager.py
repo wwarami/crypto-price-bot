@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from crypto_track.database.models import User, Crypto, Price
@@ -57,7 +58,8 @@ class AsyncDatabaseManager:
     async def update_user(self, 
                           user_id: str,
                           new_user_name: str = None,
-                          new_how_often: TimeOptions = None) -> User:
+                          new_how_often: TimeOptions = None,
+                          new_last_update: datetime =None) -> User:
         async with self.async_session() as session:
             query = select(User).filter(User.id == user_id)
             result = await session.execute(query)
@@ -66,6 +68,9 @@ class AsyncDatabaseManager:
                 user.name = new_user_name
             if new_how_often:
                 user.how_often = new_how_often
+
+            if new_last_update:
+                user.last_update = new_last_update
 
             await session.commit()
             return user

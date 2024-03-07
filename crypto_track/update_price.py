@@ -20,6 +20,7 @@ async def update_prices_manager():
 
         if minutes_ago >= int(user.how_often.value):
             await send_update_to_user(user, cryptos_id_price_dict)
+            await AsyncDatabaseManager().update_user(user_id=user.id, new_last_update=now)
             
 
 def generate_id_price_cryptos_dict(cryptos):
