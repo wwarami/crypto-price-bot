@@ -3,6 +3,7 @@ from crypto_track.api.manager import AsyncAPIManager
 from crypto_track.bot import bot
 from datetime import datetime
 from crypto_track.database.models import Crypto
+from aiogram.exceptions import TelegramForbiddenError
 
 
 with open('messages/crypto_price/price_list.txt', 'r', encoding='utf-8') as file:
@@ -33,7 +34,12 @@ async def send_update_to_user(user, cryptos_id_price):
 
     prices_formated = [f"🔹{crypto.name}: <code>{price}</code>💲" for crypto, price in new_update.items()]
     
-    await bot.send_message(chat_id=user.id ,text=price_list_text.format(cryptos_prices='\n'.join(prices_formated)))
+    try:
+        await bot.send_message(chat_id=user.id ,text=price_list_text.format(cryptos_prices='\n'.join(prices_formated)))
+    except TelegramForbiddenError:
+        print(f'User [{user.id}] has blocked the bot.')
+    except Exception as ex:
+        print(f'Something went wrong whilte sending update to user [{user.id}].\nDetail: {ex}.')
 
 
 async def update_all_cryptos() -> list[Crypto]:
