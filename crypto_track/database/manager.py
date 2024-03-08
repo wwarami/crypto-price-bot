@@ -143,6 +143,18 @@ class AsyncDatabaseManager:
             
             return False
 
+    async def delete_crypto(self, crypto_id: str) -> bool:
+        async with self.async_session() as session:
+            query = select(Crypto).filter_by(id=crypto_id)
+            result = await session.execute(query)
+            crypto = result.scalars().first()
+            
+            if crypto:
+                await session.delete(crypto)
+                await session.commit()
+                return True
+            return False
+
     async def get_multiple_users_with_cryptos(self, user_ids: Optional[List[str]] = None) -> List[User]:
         async with self.async_session() as session:
             # Start constructing the query
@@ -190,7 +202,22 @@ class AsyncDatabaseManager:
             result = await session.execute(query)
             prices = result.scalars().all()
             return prices
-    
+        
+    async def delete_all_prices_of_crypto(self, crypto_id=str) -> bool:
+        async with self.async_session() as session:
+            query = select(Price).filter(Price.crypto_id == crypto_id)
+            result = await session.execute(query)
+            prices = result.scalars().all()
+
+            if not prices:
+                return False
+            
+            for price in prices:
+                await session.delete(price)
+            
+            await session.commit()
+            return True
+
     async def get_crypto_current_price(self,
                                    crypto_id: str) -> Price:
         async with self.async_session() as session:
@@ -201,18 +228,19 @@ class AsyncDatabaseManager:
 
             return current_price
     
-    async def get_multiple_cryptos_current_price(self, crypto_ids: List[str]):
+    async def get_multiple_cryptos_current_price(self, crypto_ids: List[str] = None):
         async with self.async_session() as session:
-            # Subquery to find the latest price date for each of the specified crypto_ids
-            latest_price_subquery = (
-                select(
+            # Subquery to find the latest price date for each of the specified crypto_ids  
+            if crypto_ids:
+                latest_price_subquery = select(
                     Price.crypto_id,
                     func.max(Price.date).label('max_date')
-                )
-                .where(Price.crypto_id.in_(crypto_ids))
-                .group_by(Price.crypto_id)
-                .subquery('latest_price')
-            )
+                ).where(Price.crypto_id.in_(crypto_ids)).group_by(Price.crypto_id).subquery('latest_price')
+            else:
+                latest_price_subquery = select(
+                        Price.crypto_id,
+                        func.max(Price.date).label('max_date')
+                    ).group_by(Price.crypto_id).subquery('latest_price')
 
             # Aliasing the Price table to join with the subquery
             latest_price = aliased(Price)
