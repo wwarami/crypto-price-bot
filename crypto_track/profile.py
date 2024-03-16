@@ -56,6 +56,11 @@ async def handle_edit_name_query(callback_query: CallbackQuery, state: FSMContex
         await callback_query.answer('درحال پردازش')
     except:
         pass
+    
+    user = await AsyncDatabaseManager().check_user_exists(user_id=callback_query.from_user.id)
+    if not user:
+        return
+    
     await state.set_state(UpdateState.name)
 
     await callback_query.message.answer('<b>لطفا اسم جدید خودتون رو وارد کنید: </b>')
@@ -79,6 +84,11 @@ async def handle_edit_how_often_query(callback_query: CallbackQuery, state: FSMC
         await callback_query.answer('درحال پردازش')
     except:
         pass
+
+    user = await AsyncDatabaseManager().check_user_exists(user_id=callback_query.from_user.id)
+    if not user:
+        return
+
     await state.set_state(UpdateState.how_often)
 
     await callback_query.message.answer(
@@ -117,10 +127,15 @@ async def handle_edit_tracking_cryptos_query(callback_query: CallbackQuery, stat
         await callback_query.answer('درحال پردازش')
     except:
         pass
+    
+    user = await AsyncDatabaseManager().get_user_with_cryptos(user_id=callback_query.from_user.id)
+    if not user:
+        return
+    
     await state.set_state(UpdateState.tracking_cryptos)
 
     available_cryptos = await AsyncDatabaseManager().get_all_cryptos()
-    user_cryptos = [str(crypto.id) for crypto in await AsyncDatabaseManager().get_user_cryptos(user_id=callback_query.from_user.id)]
+    user_cryptos = [str(crypto.id) for crypto in user.tracking_cryptos]
     await state.update_data(tracking_cryptos=user_cryptos)
     
     await callback_query.message.answer(
